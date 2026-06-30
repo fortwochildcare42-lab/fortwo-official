@@ -138,23 +138,46 @@ const countUp = (el, target, suffix = '') => {
   }, 30);
 };
 
-const trustSection = document.querySelector('.hero-trust');
-if (trustSection) {
-  // ページロード後にカウントアップ
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      const nums = trustSection.querySelectorAll('.trust-num');
-      // 最初の"7"だけカウントアップ（他は文字列なのでスキップ）
-      if (nums[0]) {
-        const original = nums[0].innerHTML;
-        countUp(nums[0], 7, '<small>年</small>');
-        setTimeout(() => { nums[0].innerHTML = original; }, 1300);
+/* ---------- INSTAGRAM FEED ---------- */
+const instaGrid = document.getElementById('insta-grid');
+
+if (instaGrid) {
+  (async () => {
+    try {
+      const res  = await fetch('/instagram');
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'failed to load');
       }
-      if (nums[1]) {
-        const original2 = nums[1].textContent;
-        countUp(nums[1], 6, '');
-        setTimeout(() => { nums[1].textContent = original2; }, 700);
+
+      const posts = (data.data || []).filter(p =>
+        p.media_type === 'IMAGE' || p.media_type === 'CAROUSEL_ALBUM' || p.media_type === 'VIDEO'
+      );
+
+      if (posts.length === 0) {
+        instaGrid.innerHTML = '<p class="insta-error">現在表示できる投稿がありません。</p>';
+        return;
       }
-    }, 800);
-  });
+
+      instaGrid.innerHTML = posts.slice(0, 8).map(post => {
+        const imgSrc = post.media_type === 'VIDEO'
+          ? (post.thumbnail_url || post.media_url)
+          : post.media_url;
+        const caption = post.caption
+          ? post.caption.replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 120)
+          : '';
+
+        return `
+          <a class="insta-post" href="${post.permalink}" target="_blank" rel="noopener noreferrer" aria-label="Instagramの投稿を見る">
+            <img src="${imgSrc}" alt="${caption || 'For Two Instagram投稿'}" loading="lazy">
+            <svg class="insta-post-icon" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 9h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" opacity="0"/><rect x="2" y="2" width="20" height="20" rx="5" fill="none" stroke="white" stroke-width="1.6"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="none" stroke="white" stroke-width="1.6"/><circle cx="17.5" cy="6.5" r="1" fill="white"/></svg>
+            ${caption ? `<span class="insta-post-overlay"><span class="insta-post-caption">${caption}</span></span>` : ''}
+          </a>
+        `;
+      }).join('');
+    } catch (err) {
+      instaGrid.innerHTML = '<p class="insta-error">Instagramの投稿を読み込めませんでした。下のボタンから直接ご覧ください。</p>';
+    }
+  })();
 }
