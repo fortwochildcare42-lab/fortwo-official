@@ -324,9 +324,7 @@ ul { list-style: none; }
   animation: slideRight 0.9s 0.1s cubic-bezier(.22,1,.36,1) both;
 }
 .hero-headline .em-peach {
-  background: linear-gradient(90deg, #ffd4bc 0%, var(--peach) 55%, #e0885a 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--peach);
 }
 
 .hero-sub {
