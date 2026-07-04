@@ -191,3 +191,54 @@ if (overviewSection) {
   }, { threshold: 0.2 });
   ovObs.observe(overviewSection);
 }
+
+/* ---------- INSTAGRAM FEED ---------- */
+const instaGrid = document.getElementById('insta-grid');
+
+if (instaGrid) {
+  (async () => {
+    try {
+      const res  = await fetch('/instagram');
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'failed to load');
+      }
+
+      const posts = (data.data || []).filter(p =>
+        p.media_type === 'IMAGE' ||
+        p.media_type === 'CAROUSEL_ALBUM' ||
+        p.media_type === 'VIDEO'
+      );
+
+      if (posts.length === 0) {
+        instaGrid.innerHTML = '<p class="insta-error">現在表示できる投稿がありません。</p>';
+        return;
+      }
+
+      instaGrid.innerHTML = posts.slice(0, 8).map(post => {
+        const imgSrc = post.media_type === 'VIDEO'
+          ? (post.thumbnail_url || post.media_url)
+          : post.media_url;
+        const caption = post.caption
+          ? post.caption.replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 120)
+          : '';
+
+        return `
+          <a class="insta-post" href="${post.permalink}" target="_blank" rel="noopener noreferrer" aria-label="Instagramの投稿を見る">
+            <img src="${imgSrc}" alt="${caption || 'For Two Instagram投稿'}" loading="lazy">
+            <svg class="insta-post-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="2" y="2" width="20" height="20" rx="5" fill="none" stroke="white" stroke-width="1.6"/>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="none" stroke="white" stroke-width="1.6"/>
+              <circle cx="17.5" cy="6.5" r="1" fill="white"/>
+            </svg>
+            ${caption ? `<span class="insta-post-overlay"><span class="insta-post-caption">${caption}</span></span>` : ''}
+          </a>
+        `;
+      }).join('');
+
+    } catch (err) {
+      instaGrid.innerHTML = '<p class="insta-error">Instagramの投稿を読み込めませんでした。下のボタンから直接ご覧ください。</p>';
+    }
+  })();
+}
